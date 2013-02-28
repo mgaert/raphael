@@ -1,3 +1,3 @@
 [submodule "eve"]
-	path = eve
+	path = src/eve
 	url = git://github.com/adobe-webplatform/eve.git

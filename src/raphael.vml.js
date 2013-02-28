@@ -33,10 +33,13 @@ window.Raphael && window.Raphael.vml && function (R) {
         path2vml = function (path) {
             var total =  /[ahqstv]/ig,
                 command = R._pathToAbsolute;
-            Str(path).match(total) && (command = R._path2curve);
+            var res = null;
+            if(Str(path).match(total)){
+              command = R._path2curve;
+            }
             total = /[clmz]/g;
             if (command == R._pathToAbsolute && !Str(path).match(total)) {
-                var res = Str(path).replace(bites, function (all, command, args) {
+                res = Str(path).replace(bites, function (all, command, args) {
                     var vals = [],
                         isMove = command.toLowerCase() == "m",
                         res = map[command];
@@ -56,7 +59,9 @@ window.Raphael && window.Raphael.vml && function (R) {
             for (var i = 0, ii = pa.length; i < ii; i++) {
                 p = pa[i];
                 r = pa[i][0].toLowerCase();
-                r == "z" && (r = "x");
+                if(r == "z"){
+                  r = "x";
+                }
                 for (var j = 1, jj = p.length; j < jj; j++) {
                     r += round(p[j] * zoom) + (j != jj - 1 ? "," : E);
                 }
@@ -89,12 +94,15 @@ window.Raphael && window.Raphael.vml && function (R) {
             }
             o.coordsize = abs(kx) + S + abs(ky);
             s.rotation = deg * (sx * sy < 0 ? -1 : 1);
+            var c;
             if (deg) {
-                var c = compensation(deg, dx, dy);
+                c = compensation(deg, dx, dy);
                 dx = c.dx;
                 dy = c.dy;
             }
-            sx < 0 && (flip += "x");
+            if(sx < 0){
+              flip += "x";
+            }
             sy < 0 && (flip += " y") && (y = -1);
             s.flip = flip;
             o.coordorigin = (dx * -kx) + S + (dy * -ky);
