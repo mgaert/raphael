@@ -1,2 +1,5 @@
 node_modules
-
+lib
+.grunt
+_SpecRunner.html
+jsTestDriver.conf

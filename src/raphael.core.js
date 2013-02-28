@@ -5,6 +5,8 @@
 // │ Copyright (c) 2008-2011 Sencha Labs (http://sencha.com)             │ \\
 // │ Licensed under the MIT (http://raphaeljs.com/license.html) license. │ \\
 // └─────────────────────────────────────────────────────────────────────┘ \\
+
+/*jshint export:loaded */
 (function () {
     /*\
      * Raphael
@@ -4483,15 +4485,15 @@
             i = 0;
         if (status) {
             for (i = 0, ii = animationElements.length; i < ii; i++) {
-                var e = animationElements[i];
-                if (e.el.id === element.id && e.anim === anim) {
-                    if (e.percent != percent) {
+                var e_obj = animationElements[i];
+                if (e_obj.el.id === element.id && e_obj.anim === anim) {
+                    if (e_obj.percent != percent) {
                         animationElements.splice(i, 1);
                         isInAnimSet = 1;
                     } else {
-                        isInAnim = e;
+                        isInAnim = e_obj;
                     }
-                    element.attr(e.totalOrigin);
+                    element.attr(e_obj.totalOrigin);
                     break;
                 }
             }
