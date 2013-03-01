@@ -24,7 +24,7 @@ module.exports = function(grunt) {
         stripBanners : true
       },
       dist : {
-        src : ['eve/eve.js', 'src/<%= pkg.name %>.core.js', 'src/<%= pkg.name %>.svg.js', 'src/<%= pkg.name %>.vml.js'],
+        src : ['src/eve/eve.js', 'src/<%= pkg.name %>.core.js', 'src/<%= pkg.name %>.svg.js', 'src/<%= pkg.name %>.vml.js'],
         dest : 'bin/<%= pkg.name %>.js'
       }
     },
@@ -59,10 +59,10 @@ module.exports = function(grunt) {
     },
     jasmine : {
       pivotal : {
-        src : 'src/**/*.js',
+        src : 'src/*.js',
         options : {
-          specs : 'spec/*Spec.js',
-          helpers : 'spec/*Helper.js'
+          specs : 'test/*Spec.js',
+          helpers : 'test/*Helper.js'
         }
       }
     },
