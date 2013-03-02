@@ -6,11 +6,9 @@
 // │ Licensed under the MIT (http://raphaeljs.com/license.html) license. │ \\
 // └─────────────────────────────────────────────────────────────────────┘ \\
 
-/* jshint strict: true, undef: true, unused:true*/
-/*global eve, document, window, ActiveXObject, createPopup, setTimeout */
-(function () {
-  "use strict"
-  
+/* jshint strict: true, undef: true, unused:true, laxcomma: true, devel: true */
+/*global eve, document, window, ActiveXObject, createPopup, setTimeout, navigator */
+(function () {  
     /*\
      * Raphael
      [ method ]
@@ -60,7 +58,7 @@
      |     y: 40,
      |     text: "Dump"
      | }]);
-    \*/;
+    \*/
     function R(first) {
         if (R.is(first, "function")) {
             return loaded ? first() : eve.on("raphael.DOMload", first);
@@ -2640,7 +2638,7 @@
             }
             this.add(x, 0, 0, y, 0, 0);
             if(cx || cy) {
-              his.add(1, 0, 0, 1, -cx, -cy);
+              this.add(1, 0, 0, 1, -cx, -cy);
             }
         };
         /*\
@@ -4644,7 +4642,7 @@
                 }
             }
             timestamp = params.start || anim.start || +new Date();
-            e = {
+            var e = {
                 anim: anim,
                 percent: percent,
                 timestamp: timestamp,
