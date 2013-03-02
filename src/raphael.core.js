@@ -6,8 +6,11 @@
 // │ Licensed under the MIT (http://raphaeljs.com/license.html) license. │ \\
 // └─────────────────────────────────────────────────────────────────────┘ \\
 
-/*jshint export:loaded */
+/* jshint strict: true, undef: true, unused:true*/
+/*global eve, document, window, ActiveXObject, createPopup, setTimeout */
 (function () {
+  "use strict"
+  
     /*\
      * Raphael
      [ method ]
@@ -57,7 +60,7 @@
      |     y: 40,
      |     text: "Dump"
      | }]);
-    \*/
+    \*/;
     function R(first) {
         if (R.is(first, "function")) {
             return loaded ? first() : eve.on("raphael.DOMload", first);
@@ -330,7 +333,8 @@
         b = d.firstChild;
         b.style.behavior = "url(#default#VML)";
         if (!(b && typeof b.adj === "object")) {
-            return (R.type = E);
+          R.type = E;
+          return R.type;
         }
         d = null;
     }
@@ -1722,7 +1726,7 @@
             for (var i = start, ii = pathArray.length; i < ii; i++) {
                 var r = res[i] = [],
                     pa = pathArray[i], 
-                    j =0;
+                    j =0,jj;
                 if (pa[0] != lowerCase.call(pa[0])) {
                     r[0] = lowerCase.call(pa[0]);
                     switch (r[0]) {
@@ -1810,7 +1814,7 @@
             for (var r, pa, i = start, ii = pathArray.length; i < ii; i++) {
                 res.push(r = []);
                 pa = pathArray[i];
-                var dots, j = 0;
+                var dots, j = 0,jj;
                 if (pa[0] != upperCase.call(pa[0])) {
                     r[0] = upperCase.call(pa[0]);
                     switch (r[0]) {
@@ -2452,7 +2456,7 @@
         };
     R._getContainer = function (x, y, w, h) {
         var container;
-        container = h === null && !R.is(x, "object") ? g.doc.getElementById(x) : x;
+        container = (h === null && !R.is(x, "object")) ? g.doc.getElementById(x) : x;
         if (container === null) {
             return;
         }
@@ -2755,7 +2759,7 @@
             } else {
                 out.rotate = R.deg(math.asin(sin));
             }
-
+            /* jshint -W018 */
             out.isSimple = !+out.shear.toFixed(9) && (out.scalex.toFixed(9) === out.scaley.toFixed(9) || !out.rotate);
             out.isSuperSimple = !+out.shear.toFixed(9) && out.scalex.toFixed(9) === out.scaley.toFixed(9) && !out.rotate;
             out.noRotation = !+out.shear.toFixed(9) && !out.rotate;
@@ -4209,7 +4213,7 @@
                 if (time < ms) {
                     var pos = easing(time / ms);
                     for (var attr in from) if (from[has](attr)) {
-                        var j = 0;
+                        var j = 0,jj;
                         switch (availableAnimAttrs[attr]) {
                             case nu:
                                 now = +from[attr] + pos * ms * diff[attr];
@@ -4523,7 +4527,7 @@
                       from[attr] = availableAttrs[attr];
                     }
                     to[attr] = params[attr];
-                    var j = 0;
+                    var j = 0,jj,ii;
                     switch (availableAnimAttrs[attr]) {
                         case nu:
                             diff[attr] = (to[attr] - from[attr]) / ms;
