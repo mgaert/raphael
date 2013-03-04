@@ -6,9 +6,13 @@
 // │ Licensed under the MIT (http://raphaeljs.com/license.html) license. │ \\
 // └─────────────────────────────────────────────────────────────────────┘ \\
 
-/* jshint strict: true, undef: true, unused:true, laxcomma: true, devel: true */
+/* jshint undef: true, unused: true, laxcomma: true, devel: true */
+/* jshint -W051, -W020 */
+
 /*global eve, document, window, ActiveXObject, createPopup, setTimeout, navigator */
-(function () {  
+/*global Raphael */
+
+(function () {
     /*\
      * Raphael
      [ method ]
@@ -1923,10 +1927,10 @@
                 xy = rotate(x2, y2, -rad);
                 x2 = xy.x;
                 y2 = xy.y;
-                var cos = math.cos(PI / 180 * angle),
-                    sin = math.sin(PI / 180 * angle),
-                    x = (x1 - x2) / 2,
-                    y = (y1 - y2) / 2;
+                //var cos = math.cos(PI / 180 * angle);
+                //var sin = math.sin(PI / 180 * angle);
+                var x = (x1 - x2) / 2;
+                var y = (y1 - y2) / 2;
                 var h = (x * x) / (rx * rx) + (y * y) / (ry * ry);
                 if (h > 1) {
                     h = math.sqrt(h);

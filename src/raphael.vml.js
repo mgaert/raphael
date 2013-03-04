@@ -7,120 +7,128 @@
 // │ Copyright (c) 2008-2011 Sencha Labs (http://sencha.com)             │ \\
 // │ Licensed under the MIT (http://raphaeljs.com/license.html) license. │ \\
 // └─────────────────────────────────────────────────────────────────────┘ \\
+
+/* jshint undef: true, unused:true, laxcomma: true, devel: true, browser: true */
+
+/* jshint -W083 */
+
 window.Raphael && window.Raphael.vml && function (R) {
-    var has = "hasOwnProperty",
-        Str = String,
-        toFloat = parseFloat,
-        math = Math,
-        round = math.round,
-        mmax = math.max,
-        mmin = math.min,
-        abs = math.abs,
-        fillString = "fill",
-        separator = /[, ]+/,
-        eve = R.eve,
-        ms = " progid:DXImageTransform.Microsoft",
-        S = " ",
-        E = "",
-        map = {M: "m", L: "l", C: "c", Z: "x", m: "t", l: "r", c: "v", z: "x"},
-        bites = /([clmz]),?([^clmz]*)/gi,
-        blurregexp = / progid:\S+Blur\([^\)]+\)/g,
-        val = /-?[^,\s-]+/g,
-        cssDot = "position:absolute;left:0;top:0;width:1px;height:1px",
-        zoom = 21600,
-        pathTypes = {path: 1, rect: 1, image: 1},
-        ovalTypes = {circle: 1, ellipse: 1},
-        path2vml = function (path) {
-            var total =  /[ahqstv]/ig,
-                command = R._pathToAbsolute;
-            var res = null;
-            if(Str(path).match(total)){
-              command = R._path2curve;
+  'use strict';
+  var has = "hasOwnProperty",
+      Str = String,
+      toFloat = parseFloat,
+      math = Math,
+      round = math.round,
+      mmax = math.max,
+      mmin = math.min,
+      abs = math.abs,
+      fillString = "fill",
+      separator = /[, ]+/,
+      eve = R.eve,
+      ms = " progid:DXImageTransform.Microsoft",
+      S = " ",
+      E = "",
+      map = {M: "m", L: "l", C: "c", Z: "x", m: "t", l: "r", c: "v", z: "x"},
+      bites = /([clmz]),?([^clmz]*)/gi,
+      blurregexp = / progid:\S+Blur\([^\)]+\)/g,
+      val = /-?[^,\s-]+/g,
+      cssDot = "position:absolute;left:0;top:0;width:1px;height:1px",
+      zoom = 21600,
+      pathTypes = {path: 1, rect: 1, image: 1},
+      ovalTypes = {circle: 1, ellipse: 1},
+      path2vml = function (path) {
+          var total =  /[ahqstv]/ig,
+              command = R._pathToAbsolute;
+          var res = null;
+          if(Str(path).match(total)){
+            command = R._path2curve;
+          }
+          total = /[clmz]/g;
+          if (command == R._pathToAbsolute && !Str(path).match(total)) {
+              res = Str(path).replace(bites, function (all, command, args) {
+                  var vals = [],
+                      isMove = command.toLowerCase() == "m",
+                      res = map[command];
+                  args.replace(val, function (value) {
+                      if (isMove && vals.length == 2) {
+                          res += vals + map[command == "m" ? "l" : "L"];
+                          vals = [];
+                      }
+                      vals.push(round(value * zoom));
+                  });
+                  return res + vals;
+              });
+              return res;
+          }
+          var pa = command(path), p, r;
+          res = [];
+          for (var i = 0, ii = pa.length; i < ii; i++) {
+              p = pa[i];
+              r = pa[i][0].toLowerCase();
+              if(r == "z"){
+                r = "x";
+              }
+              for (var j = 1, jj = p.length; j < jj; j++) {
+                  r += round(p[j] * zoom) + (j != jj - 1 ? "," : E);
+              }
+              res.push(r);
+          }
+          return res.join(S);
+      },
+      compensation = function (deg, dx, dy) {
+          var m = R.matrix();
+          m.rotate(-deg, 0.5, 0.5);
+          return {
+              dx: m.x(dx, dy),
+              dy: m.y(dx, dy)
+          };
+      },
+      setCoords = function (p, sx, sy, dx, dy, deg) {
+        var _ = p._,
+            m = p.matrix,
+            fillpos = _.fillpos,
+            o = p.node,
+            s = o.style,
+            y = 1,
+            flip = "",
+            kx = zoom / sx,
+            ky = zoom / sy;
+        s.visibility = "hidden";
+        if (!sx || !sy) {
+            return;
+        }
+        o.coordsize = abs(kx) + S + abs(ky);
+        s.rotation = deg * (sx * sy < 0 ? -1 : 1);
+        var c;
+        if (deg) {
+            c = compensation(deg, dx, dy);
+            dx = c.dx;
+            dy = c.dy;
+        }
+        if(sx < 0){
+          flip += "x";
+        }
+        if(sy < 0){
+          flip += " y";
+          y = -1;
+        }
+        s.flip = flip;
+        o.coordorigin = (dx * -kx) + S + (dy * -ky);
+        if (fillpos || _.fillsize) {
+            var fill = o.getElementsByTagName(fillString);
+            fill = fill && fill[0];
+            o.removeChild(fill);
+            if (fillpos) {
+                c = compensation(deg, m.x(fillpos[0], fillpos[1]), m.y(fillpos[0], fillpos[1]));
+                fill.position = c.dx * y + S + c.dy * y;
             }
-            total = /[clmz]/g;
-            if (command == R._pathToAbsolute && !Str(path).match(total)) {
-                res = Str(path).replace(bites, function (all, command, args) {
-                    var vals = [],
-                        isMove = command.toLowerCase() == "m",
-                        res = map[command];
-                    args.replace(val, function (value) {
-                        if (isMove && vals.length == 2) {
-                            res += vals + map[command == "m" ? "l" : "L"];
-                            vals = [];
-                        }
-                        vals.push(round(value * zoom));
-                    });
-                    return res + vals;
-                });
-                return res;
+            if (_.fillsize) {
+                fill.size = _.fillsize[0] * abs(sx) + S + _.fillsize[1] * abs(sy);
             }
-            var pa = command(path), p, r;
-            res = [];
-            for (var i = 0, ii = pa.length; i < ii; i++) {
-                p = pa[i];
-                r = pa[i][0].toLowerCase();
-                if(r == "z"){
-                  r = "x";
-                }
-                for (var j = 1, jj = p.length; j < jj; j++) {
-                    r += round(p[j] * zoom) + (j != jj - 1 ? "," : E);
-                }
-                res.push(r);
-            }
-            return res.join(S);
-        },
-        compensation = function (deg, dx, dy) {
-            var m = R.matrix();
-            m.rotate(-deg, .5, .5);
-            return {
-                dx: m.x(dx, dy),
-                dy: m.y(dx, dy)
-            };
-        },
-        setCoords = function (p, sx, sy, dx, dy, deg) {
-            var _ = p._,
-                m = p.matrix,
-                fillpos = _.fillpos,
-                o = p.node,
-                s = o.style,
-                y = 1,
-                flip = "",
-                dxdy,
-                kx = zoom / sx,
-                ky = zoom / sy;
-            s.visibility = "hidden";
-            if (!sx || !sy) {
-                return;
-            }
-            o.coordsize = abs(kx) + S + abs(ky);
-            s.rotation = deg * (sx * sy < 0 ? -1 : 1);
-            var c;
-            if (deg) {
-                c = compensation(deg, dx, dy);
-                dx = c.dx;
-                dy = c.dy;
-            }
-            if(sx < 0){
-              flip += "x";
-            }
-            sy < 0 && (flip += " y") && (y = -1);
-            s.flip = flip;
-            o.coordorigin = (dx * -kx) + S + (dy * -ky);
-            if (fillpos || _.fillsize) {
-                var fill = o.getElementsByTagName(fillString);
-                fill = fill && fill[0];
-                o.removeChild(fill);
-                if (fillpos) {
-                    c = compensation(deg, m.x(fillpos[0], fillpos[1]), m.y(fillpos[0], fillpos[1]));
-                    fill.position = c.dx * y + S + c.dy * y;
-                }
-                if (_.fillsize) {
-                    fill.size = _.fillsize[0] * abs(sx) + S + _.fillsize[1] * abs(sy);
-                }
-                o.appendChild(fill);
-            }
-            s.visibility = "visible";
-        };
+            o.appendChild(fill);
+        }
+        s.visibility = "visible";
+    };
     R.toString = function () {
         return  "Your browser doesn\u2019t support SVG. Falling down to VML.\nYou are running Rapha\xebl " + this.version;
     };
@@ -158,12 +166,9 @@ window.Raphael && window.Raphael.vml && function (R) {
         var node = o.node,
             a = o.attrs,
             s = node.style,
-            xy,
             newpath = pathTypes[o.type] && (params.x != a.x || params.y != a.y || params.width != a.width || params.height != a.height || params.cx != a.cx || params.cy != a.cy || params.rx != a.rx || params.ry != a.ry || params.r != a.r),
             isOval = ovalTypes[o.type] && (a.cx != params.cx || a.cy != params.cy || a.r != params.r || a.rx != params.rx || a.ry != params.ry),
             res = o;
-
-
         for (var par in params) if (params[has](par)) {
             a[par] = params[par];
         }
@@ -171,11 +176,21 @@ window.Raphael && window.Raphael.vml && function (R) {
             a.path = R._getPath[o.type](o);
             o._.dirty = 1;
         }
-        params.href && (node.href = params.href);
-        params.title && (node.title = params.title);
-        params.target && (node.target = params.target);
-        params.cursor && (s.cursor = params.cursor);
-        "blur" in params && o.blur(params.blur);
+        if(params.href){
+          node.href = params.href;
+        }
+        if(params.title){
+          node.title = params.title;
+        }
+        if(params.target){
+          node.target = params.target;
+        }
+        if(params.cursor){
+          s.cursor = params.cursor;
+        }
+        if("blur" in params){
+          o.blur(params.blur);
+        }
         if (params.path && o.type == "path" || newpath) {
             node.path = path2vml(~Str(a.path).toLowerCase().indexOf("r") ? R._pathToAbsolute(a.path) : a.path);
             if (o.type == "image") {
@@ -184,7 +199,9 @@ window.Raphael && window.Raphael.vml && function (R) {
                 setCoords(o, 1, 1, 0, 0, 0);
             }
         }
-        "transform" in params && o.transform(params.transform);
+        if("transform" in params){
+          o.transform(params.transform);
+        }
         if (isOval) {
             var cx = +a.cx,
                 cy = +a.cy,
@@ -212,16 +229,28 @@ window.Raphael && window.Raphael.vml && function (R) {
                 }
             }
             if (!params["clip-rect"]) {
-                node.clipRect && (node.clipRect.style.clip = "auto");
+                if(node.clipRect){
+                  node.clipRect.style.clip = "auto";
+                }
             }
         }
         if (o.textpath) {
             var textpathStyle = o.textpath.style;
-            params.font && (textpathStyle.font = params.font);
-            params["font-family"] && (textpathStyle.fontFamily = '"' + params["font-family"].split(",")[0].replace(/^['"]+|['"]+$/g, E) + '"');
-            params["font-size"] && (textpathStyle.fontSize = params["font-size"]);
-            params["font-weight"] && (textpathStyle.fontWeight = params["font-weight"]);
-            params["font-style"] && (textpathStyle.fontStyle = params["font-style"]);
+            if(params.font){
+              textpathStyle.font = params.font;
+            }
+            if(params["font-family"]){ 
+              textpathStyle.fontFamily = '"' + params["font-family"].split(",")[0].replace(/^['"]+|['"]+$/g, E) + '"';
+            }
+            if(params["font-size"]){
+              textpathStyle.fontSize = params["font-size"];
+            }
+            if(params["font-weight"]){
+              textpathStyle.fontWeight = params["font-weight"];
+            }
+            if(params["font-style"]){
+              textpathStyle.fontStyle = params["font-style"];
+            }
         }
         if ("arrow-start" in params) {
             addArrow(res, params["arrow-start"]);
@@ -229,33 +258,39 @@ window.Raphael && window.Raphael.vml && function (R) {
         if ("arrow-end" in params) {
             addArrow(res, params["arrow-end"], 1);
         }
-        if (params.opacity != null || 
-            params["stroke-width"] != null ||
-            params.fill != null ||
-            params.src != null ||
-            params.stroke != null ||
-            params["stroke-width"] != null ||
-            params["stroke-opacity"] != null ||
-            params["fill-opacity"] != null ||
-            params["stroke-dasharray"] != null ||
-            params["stroke-miterlimit"] != null ||
-            params["stroke-linejoin"] != null ||
-            params["stroke-linecap"] != null) {
+        if (params.opacity !== null || 
+            params["stroke-width"] !== null ||
+            params.fill !== null ||
+            params.src !== null ||
+            params.stroke !== null ||
+            params["stroke-width"] !== null ||
+            params["stroke-opacity"] !== null ||
+            params["fill-opacity"] !== null ||
+            params["stroke-dasharray"] !== null ||
+            params["stroke-miterlimit"] !== null ||
+            params["stroke-linejoin"] !== null ||
+            params["stroke-linecap"] !== null) {
             var fill = node.getElementsByTagName(fillString),
                 newfill = false;
             fill = fill && fill[0];
-            !fill && (newfill = fill = createNode(fillString));
+            if(!fill){
+              newfill = fill = createNode(fillString);
+            }
             if (o.type == "image" && params.src) {
                 fill.src = params.src;
             }
-            params.fill && (fill.on = true);
-            if (fill.on == null || params.fill == "none" || params.fill === null) {
+            if(params.fill){
+              fill.on = true;
+            }
+            if (fill.on === null || params.fill == "none" || params.fill === null) {
                 fill.on = false;
             }
             if (fill.on && params.fill) {
                 var isURL = Str(params.fill).match(R._ISURL);
                 if (isURL) {
-                    fill.parentNode == node && node.removeChild(fill);
+                    if(fill.parentNode == node){
+                      node.removeChild(fill);
+                    }
                     fill.rotate = true;
                     fill.src = isURL[1];
                     fill.type = "tile";
@@ -277,8 +312,9 @@ window.Raphael && window.Raphael.vml && function (R) {
                     }
                 }
             }
+            var opacity;
             if ("fill-opacity" in params || "opacity" in params) {
-                var opacity = ((+a["fill-opacity"] + 1 || 2) - 1) * ((+a.opacity + 1 || 2) - 1) * ((+R.getRGB(params.fill).o + 1 || 2) - 1);
+                opacity = ((+a["fill-opacity"] + 1 || 2) - 1) * ((+a.opacity + 1 || 2) - 1) * ((+R.getRGB(params.fill).o + 1 || 2) - 1);
                 opacity = mmin(mmax(opacity, 0), 1);
                 fill.opacity = opacity;
                 if (fill.src) {
@@ -288,30 +324,47 @@ window.Raphael && window.Raphael.vml && function (R) {
             node.appendChild(fill);
             var stroke = (node.getElementsByTagName("stroke") && node.getElementsByTagName("stroke")[0]),
             newstroke = false;
-            !stroke && (newstroke = stroke = createNode("stroke"));
+            if(!stroke){
+              newstroke = stroke = createNode("stroke");
+            }
             if ((params.stroke && params.stroke != "none") ||
                 params["stroke-width"] ||
-                params["stroke-opacity"] != null ||
+                params["stroke-opacity"] !== null ||
                 params["stroke-dasharray"] ||
                 params["stroke-miterlimit"] ||
                 params["stroke-linejoin"] ||
                 params["stroke-linecap"]) {
                 stroke.on = true;
             }
-            (params.stroke == "none" || params.stroke === null || stroke.on == null || params.stroke == 0 || params["stroke-width"] == 0) && (stroke.on = false);
+            if(params.stroke == "none" || params.stroke === null || stroke.on === null || params.stroke === 0 || params["stroke-width"] === 0){
+              stroke.on = false;
+            }
             var strokeColor = R.getRGB(params.stroke);
-            stroke.on && params.stroke && (stroke.color = strokeColor.hex);
+            if(stroke.on && params.stroke){
+              stroke.color = strokeColor.hex;
+            }
             opacity = ((+a["stroke-opacity"] + 1 || 2) - 1) * ((+a.opacity + 1 || 2) - 1) * ((+strokeColor.o + 1 || 2) - 1);
-            var width = (toFloat(params["stroke-width"]) || 1) * .75;
+            var width = (toFloat(params["stroke-width"]) || 1) * 0.75;
             opacity = mmin(mmax(opacity, 0), 1);
-            params["stroke-width"] == null && (width = a["stroke-width"]);
-            params["stroke-width"] && (stroke.weight = width);
-            width && width < 1 && (opacity *= width) && (stroke.weight = 1);
+            if(params["stroke-width"] === null){
+              width = a["stroke-width"];
+            }
+            if(params["stroke-width"]){
+              stroke.weight = width;
+            }
+            if(width && width < 1){
+              opacity *= width;
+              stroke.weight = 1;
+            }
             stroke.opacity = opacity;
         
-            params["stroke-linejoin"] && (stroke.joinstyle = params["stroke-linejoin"] || "miter");
+            if(params["stroke-linejoin"]){
+              stroke.joinstyle = params["stroke-linejoin"] || "miter";
+            }
             stroke.miterlimit = params["stroke-miterlimit"] || 8;
-            params["stroke-linecap"] && (stroke.endcap = params["stroke-linecap"] == "butt" ? "flat" : params["stroke-linecap"] == "square" ? "square" : "round");
+            if(params["stroke-linecap"]){
+              stroke.endcap = (params["stroke-linecap"] == "butt") ? "flat" : (params["stroke-linecap"] == "square") ? "square" : "round";
+            }
             if (params["stroke-dasharray"]) {
                 var dasharray = {
                     "-": "shortdash",
@@ -327,7 +380,9 @@ window.Raphael && window.Raphael.vml && function (R) {
                 };
                 stroke.dashstyle = dasharray[has](params["stroke-dasharray"]) ? dasharray[params["stroke-dasharray"]] : E;
             }
-            newstroke && node.appendChild(stroke);
+            if(newstroke){
+              node.appendChild(stroke);
+            }
         }
         if (res.type == "text") {
             res.paper.canvas.style.display = E;
@@ -335,13 +390,23 @@ window.Raphael && window.Raphael.vml && function (R) {
                 m = 100,
                 fontSize = a.font && a.font.match(/\d+(?:\.\d*)?(?=px)/);
             s = span.style;
-            a.font && (s.font = a.font);
-            a["font-family"] && (s.fontFamily = a["font-family"]);
-            a["font-weight"] && (s.fontWeight = a["font-weight"]);
-            a["font-style"] && (s.fontStyle = a["font-style"]);
+            if(a.font){
+              s.font = a.font;
+            }
+            if(a["font-family"]){
+              s.fontFamily = a["font-family"];
+            }
+            if(a["font-weight"]){
+              s.fontWeight = a["font-weight"];
+            }
+            if(a["font-style"]){
+              s.fontStyle = a["font-style"];
+            }
             fontSize = toFloat(a["font-size"] || fontSize && fontSize[0]) || 10;
             s.fontSize = fontSize * m + "px";
-            res.textpath.string && (span.innerHTML = Str(res.textpath.string).replace(/</g, "&#60;").replace(/&/g, "&#38;").replace(/\n/g, "<br>"));
+            if(res.textpath.string){
+              span.innerHTML = Str(res.textpath.string).replace(/</g, "&#60;").replace(/&/g, "&#38;").replace(/\n/g, "<br>");
+            }
             var brect = span.getBoundingClientRect();
             res.W = a.w = (brect.right - brect.left) / m;
             res.H = a.h = (brect.bottom - brect.top) / m;
@@ -349,7 +414,9 @@ window.Raphael && window.Raphael.vml && function (R) {
             res.X = a.x;
             res.Y = a.y + res.H / 2;
 
-            ("x" in params || "y" in params) && (res.path.v = R.format("m{0},{1}l{2},{1}", round(a.x * zoom), round(a.y * zoom), round(a.x * zoom) + 1));
+            if("x" in params || "y" in params){
+              res.path.v = R.format("m{0},{1}l{2},{1}", round(a.x * zoom), round(a.y * zoom), round(a.x * zoom) + 1);
+            }
             var dirtyattrs = ["x", "y", "text", "font", "font-family", "font-weight", "font-style", "font-size"];
             for (var d = 0, dd = dirtyattrs.length; d < dd; d++) if (dirtyattrs[d] in params) {
                 res._.dirty = 1;
@@ -377,26 +444,28 @@ window.Raphael && window.Raphael.vml && function (R) {
     },
     addGradientFill = function (o, gradient, fill) {
         o.attrs = o.attrs || {};
-        var attrs = o.attrs,
-            pow = Math.pow,
-            opacity,
-            oindex,
+        
+        var pow = Math.pow,
             type = "linear",
-            fxfy = ".5 .5";
+            fxfy = "0.5 0.5";
         o.attrs.gradient = gradient;
         gradient = Str(gradient).replace(R._radial_gradient, function (all, fx, fy) {
             type = "radial";
             if (fx && fy) {
                 fx = toFloat(fx);
                 fy = toFloat(fy);
-                pow(fx - .5, 2) + pow(fy - .5, 2) > .25 && (fy = math.sqrt(.25 - pow(fx - .5, 2)) * ((fy > .5) * 2 - 1) + .5);
+                var tmp_pow = pow(fx - 0.5, 2) + pow(fy - 0.5, 2);
+                if(tmp_pow > 0.25){
+                  fy = math.sqrt(0.25 - pow(fx - 0.5, 2)) * ((fy > 0.5) * 2 - 1) + 0.5;
+                }
                 fxfy = fx + S + fy;
             }
             return E;
         });
         gradient = gradient.split(/\s*\-\s*/);
+        var angle;
         if (type == "linear") {
-            var angle = gradient.shift();
+            angle = gradient.shift();
             angle = -toFloat(angle);
             if (isNaN(angle)) {
                 return null;
@@ -415,7 +484,9 @@ window.Raphael && window.Raphael.vml && function (R) {
             fill.color2 = dots[dots.length - 1].color;
             var clrs = [];
             for (var i = 0, ii = dots.length; i < ii; i++) {
-                dots[i].offset && clrs.push(dots[i].offset + S + dots[i].color);
+                if(dots[i].offset){
+                  clrs.push(dots[i].offset + S + dots[i].color);
+                }
             }
             fill.colors = clrs.length ? clrs.join() : "0% " + fill.color;
             if (type == "radial") {
@@ -453,9 +524,13 @@ window.Raphael && window.Raphael.vml && function (R) {
             dirty: 1,
             dirtyT: 1
         };
-        !vml.bottom && (vml.bottom = this);
+        if(!vml.bottom){
+          vml.bottom = this;
+        }
         this.prev = vml.top;
-        vml.top && (vml.top.next = this);
+        if(vml.top){
+          vml.top.next = this;
+        }
         vml.top = this;
         this.next = null;
     };
@@ -464,7 +539,7 @@ window.Raphael && window.Raphael.vml && function (R) {
     Element.prototype = elproto;
     elproto.constructor = Element;
     elproto.transform = function (tstr) {
-        if (tstr == null) {
+        if (tstr === null) {
             return this._.transform;
         }
         var vbs = this.paper._viewBoxShift,
@@ -480,7 +555,7 @@ window.Raphael && window.Raphael.vml && function (R) {
             split,
             isGrad = ~Str(this.attrs.fill).indexOf("-"),
             isPatt = !Str(this.attrs.fill).indexOf("url(");
-        matrix.translate(-.5, -.5);
+        matrix.translate(-0.5, -0.5);
         if (isPatt || isGrad || this.type == "image") {
             skew.matrix = "1 0 0 1";
             skew.offset = "0 0";
@@ -502,14 +577,16 @@ window.Raphael && window.Raphael.vml && function (R) {
             skew.matrix = Str(matrix);
             skew.offset = matrix.offset();
         }
-        oldt && (this._.transform = oldt);
+        if(oldt){
+          this._.transform = oldt;
+        }
         return this;
     };
     elproto.rotate = function (deg, cx, cy) {
         if (this.removed) {
             return this;
         }
-        if (deg == null) {
+        if (deg === null) {
             return;
         }
         deg = Str(deg).split(separator);
@@ -518,8 +595,10 @@ window.Raphael && window.Raphael.vml && function (R) {
             cy = toFloat(deg[2]);
         }
         deg = toFloat(deg[0]);
-        (cy == null) && (cx = cy);
-        if (cx == null || cy == null) {
+        if(cy === null){
+          cx = cy;
+        }
+        if (cx === null || cy === null) {
             var bbox = this.getBBox(1);
             cx = bbox.x + bbox.width / 2;
             cy = bbox.y + bbox.height / 2;
@@ -554,28 +633,41 @@ window.Raphael && window.Raphael.vml && function (R) {
             sy = toFloat(sx[1]);
             cx = toFloat(sx[2]);
             cy = toFloat(sx[3]);
-            isNaN(cx) && (cx = null);
-            isNaN(cy) && (cy = null);
+            if(isNaN(cx)){
+              cx = null;
+            }
+            if(isNaN(cy)){
+              cy = null;
+            }
         }
         sx = toFloat(sx[0]);
-        (sy == null) && (sy = sx);
-        (cy == null) && (cx = cy);
-        if (cx == null || cy == null) {
-            var bbox = this.getBBox(1);
+        if(sy === null){
+          sy = sx;
         }
-        cx = cx == null ? bbox.x + bbox.width / 2 : cx;
-        cy = cy == null ? bbox.y + bbox.height / 2 : cy;
+        if(cy === null){
+          cx = cy;
+        }
+        var bbox;
+        if (cx === null || cy === null) {
+            bbox = this.getBBox(1);
+        }
+        cx = cx === null ? bbox.x + bbox.width / 2 : cx;
+        cy = cy === null ? bbox.y + bbox.height / 2 : cy;
     
         this.transform(this._.transform.concat([["s", sx, sy, cx, cy]]));
         this._.dirtyT = 1;
         return this;
     };
     elproto.hide = function () {
-        !this.removed && (this.node.style.display = "none");
+        if(!this.removed){
+          this.node.style.display = "none";
+        }
         return this;
     };
     elproto.show = function () {
-        !this.removed && (this.node.style.display = E);
+        if(!this.removed){
+          this.node.style.display = E;
+        }
         return this;
     };
     elproto._getBBox = function () {
@@ -593,36 +685,45 @@ window.Raphael && window.Raphael.vml && function (R) {
         if (this.removed || !this.node.parentNode) {
             return;
         }
-        this.paper.__set__ && this.paper.__set__.exclude(this);
+        if(this.paper.__set__){
+          this.paper.__set__.exclude(this);
+        }
         R.eve.unbind("raphael.*.*." + this.id);
         R._tear(this, this.paper);
         this.node.parentNode.removeChild(this.node);
-        this.shape && this.shape.parentNode.removeChild(this.shape);
+        if(this.shape){
+          this.shape.parentNode.removeChild(this.shape);
+        }
         for (var i in this) {
             this[i] = typeof this[i] == "function" ? R._removedFactory(i) : null;
         }
         this.removed = true;
     };
     elproto.attr = function (name, value) {
-        if (this.removed) {
+      var out = {};
+      if (this.removed) {
             return this;
         }
-        if (name == null) {
+        if (name === null) {
             var res = {};
             for (var a in this.attrs) if (this.attrs[has](a)) {
                 res[a] = this.attrs[a];
             }
-            res.gradient && res.fill == "none" && (res.fill = res.gradient) && delete res.gradient;
+            if(res.gradient && res.fill == "none"){
+              res.fill = res.gradient;
+              delete res.gradient;
+            }
             res.transform = this._.transform;
             return res;
         }
-        if (value == null && R.is(name, "string")) {
+        var i, ii;
+        if (value === null && R.is(name, "string")) {
             if (name == fillString && this.attrs.fill == "none" && this.attrs.gradient) {
                 return this.attrs.gradient;
             }
-            var names = name.split(separator),
-                out = {};
-            for (var i = 0, ii = names.length; i < ii; i++) {
+            var names = name.split(separator);
+            out = {};
+            for (i = 0, ii = names.length; i < ii; i++) {
                 name = names[i];
                 if (name in this.attrs) {
                     out[name] = this.attrs[name];
@@ -634,7 +735,7 @@ window.Raphael && window.Raphael.vml && function (R) {
             }
             return ii - 1 ? out : out[names[0]];
         }
-        if (this.attrs && value == null && R.is(name, "array")) {
+        if (this.attrs && value === null && R.is(name, "array")) {
             out = {};
             for (i = 0, ii = name.length; i < ii; i++) {
                 out[name[i]] = this.attr(name[i]);
@@ -642,11 +743,13 @@ window.Raphael && window.Raphael.vml && function (R) {
             return out;
         }
         var params;
-        if (value != null) {
+        if (value !== null) {
             params = {};
             params[name] = value;
         }
-        value == null && R.is(name, "object") && (params = name);
+        if(value === null && R.is(name, "object")){
+          params = name;
+        }
         for (var key in params) {
             eve("raphael.attr." + key + "." + this.id, this, params[key]);
         }
@@ -668,8 +771,12 @@ window.Raphael && window.Raphael.vml && function (R) {
         return this;
     };
     elproto.toFront = function () {
-        !this.removed && this.node.parentNode.appendChild(this.node);
-        this.paper && this.paper.top != this && R._tofront(this, this.paper);
+        if(!this.removed){
+          this.node.parentNode.appendChild(this.node);
+        }
+        if(this.paper && this.paper.top != this){
+          R._tofront(this, this.paper);
+        }
         return this;
     };
     elproto.toBack = function () {
@@ -728,9 +835,11 @@ window.Raphael && window.Raphael.vml && function (R) {
         el.style.cssText = cssDot;
         el.coordsize = zoom + S + zoom;
         el.coordorigin = vml.coordorigin;
-        var p = new Element(el, vml),
-            attr = {fill: "none", stroke: "#000"};
-        pathString && (attr.path = pathString);
+        var p = new Element(el, vml);
+        var attr = {fill: "none", stroke: "#000"};
+        if(pathString){
+          attr.path = pathString;
+        }
         p.type = "path";
         p.path = [];
         p.Path = E;
@@ -757,8 +866,7 @@ window.Raphael && window.Raphael.vml && function (R) {
         return res;
     };
     R._engine.ellipse = function (vml, x, y, rx, ry) {
-        var res = vml.path(),
-            a = res.attrs;
+        var res = vml.path();
         res.X = x - rx;
         res.Y = y - ry;
         res.W = rx * 2;
@@ -773,8 +881,7 @@ window.Raphael && window.Raphael.vml && function (R) {
         return res;
     };
     R._engine.circle = function (vml, x, y, r) {
-        var res = vml.path(),
-            a = res.attrs;
+        var res = vml.path();
         res.X = x - r;
         res.Y = y - r;
         res.W = res.H = r * 2;
@@ -799,7 +906,9 @@ window.Raphael && window.Raphael.vml && function (R) {
         res.H = a.height = h;
         a.path = path;
         res.type = "image";
-        fill.parentNode == node && node.removeChild(fill);
+        if(fill.parentNode == node){
+          node.removeChild(fill);
+        }
         fill.rotate = true;
         fill.src = src;
         fill.type = "tile";
@@ -854,8 +963,12 @@ window.Raphael && window.Raphael.vml && function (R) {
         var cs = this.canvas.style;
         this.width = width;
         this.height = height;
-        width == +width && (width += "px");
-        height == +height && (height += "px");
+        if(width == +width){
+          width += "px";
+        }
+        if(height == +height){
+          height += "px";
+        }
         cs.width = width;
         cs.height = height;
         cs.clip = "rect(0 " + width + " " + height + " 0)";
@@ -896,7 +1009,9 @@ window.Raphael && window.Raphael.vml && function (R) {
             var doc = win.document;
             doc.createStyleSheet().addRule(".rvml", "behavior:url(#default#VML)");
             try {
-                !doc.namespaces.rvml && doc.namespaces.add("rvml", "urn:schemas-microsoft-com:vml");
+                if(!doc.namespaces.rvml){
+                  doc.namespaces.add("rvml", "urn:schemas-microsoft-com:vml");
+                }
                 createNode = function (tagName) {
                     return doc.createElement('<rvml:' + tagName + ' class="rvml">');
                 };
@@ -911,15 +1026,14 @@ window.Raphael && window.Raphael.vml && function (R) {
         var con = R._getContainer.apply(0, arguments),
             container = con.container,
             height = con.height,
-            s,
             width = con.width,
             x = con.x,
             y = con.y;
         if (!container) {
             throw new Error("VML container not found.");
         }
-        var res = new R._Paper,
-            c = res.canvas = R._g.doc.createElement("div"),
+        var res = new R._Paper();
+        var c = res.canvas = R._g.doc.createElement("div"),
             cs = c.style;
         x = x || 0;
         y = y || 0;
@@ -927,8 +1041,12 @@ window.Raphael && window.Raphael.vml && function (R) {
         height = height || 342;
         res.width = width;
         res.height = height;
-        width == +width && (width += "px");
-        height == +height && (height += "px");
+        if(width == +width){
+          width += "px";
+        }
+        if(height == +height){
+          height += "px";
+        }
         res.coordsize = zoom * 1e3 + S + zoom * 1e3;
         res.coordorigin = "0 0";
         res.span = R._g.doc.createElement("span");
