@@ -30,7 +30,7 @@ module.exports = function(grunt) {
     },
     uglify : {
       options : {
-        banner : '<%= banner %>'
+        banner : '<%= banner %>',
       },
       dist : {
         src : '<%= concat.dist.dest %>',
@@ -86,6 +86,7 @@ module.exports = function(grunt) {
   grunt.registerTask('lint', ['jshint']);
   grunt.registerTask('test', ['jasmine']);
   grunt.registerTask('default', ['clean', 'jshint', 'concat', 'uglify']);
-  grunt.registerTask('minifi', ['clean', 'concat', 'uglify']);
+  grunt.registerTask('cancat', ['clean', 'concat']);
+  grunt.registerTask('minify', ['concat', 'uglify']);
 
 };

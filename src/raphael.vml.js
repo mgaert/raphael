@@ -853,17 +853,53 @@ window.Raphael && window.Raphael.vml && function (R) {
         return p;
     };
     R._engine.rect = function (vml, x, y, w, h, r) {
-        var path = R._rectPath(x, y, w, h, r),
-            res = vml.path(path),
-            a = res.attrs;
-        res.X = a.x = x;
-        res.Y = a.y = y;
-        res.W = a.width = w;
-        res.H = a.height = h;
-        a.r = r;
-        a.path = path;
-        res.type = "rect";
-        return res;
+//        var path = R._rectPath(x, y, w, h, r),
+//            res = vml.path(path),
+//            a = res.attrs;
+//        res.X = a.x = x;
+//        res.Y = a.y = y;
+//        res.W = a.width = w;
+//        res.H = a.height = h;
+//        a.r = r;
+//        a.path = path;
+//        res.type = "rect";
+//        return res;
+      var el = createNode("rect");
+      /*
+       * <rect
+          id=null
+          href=null
+          target=null
+          class=null
+          title=null
+          alt=null
+          style='visibility: visible'
+          opacity="1.0"
+          chromakey="null"
+          stroke="true"
+          strokecolor="black"
+          strokeweight="1"
+          fill="true"
+          fillcolor="white"
+          print="true"
+          coordsize="1000,1000"
+          coordorigin="0 0"
+        />
+       */
+      el.style.cssText = cssDot;
+      el.coordsize = zoom + S + zoom;
+      el.coordorigin = vml.coordorigin;
+      var p = new Element(el, vml);
+      var attr = {fill: "none", stroke: "#000"};
+      p.type = "rect";
+      setFillAndStroke(p, attr);
+      vml.canvas.appendChild(el);
+      var skew = createNode("skew");
+      skew.on = true;
+      el.appendChild(skew);
+      p.skew = skew;
+      p.transform(E);
+      return p;
     };
     R._engine.ellipse = function (vml, x, y, rx, ry) {
         var res = vml.path();

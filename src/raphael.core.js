@@ -10,7 +10,7 @@
 /* jshint -W051, -W020 */
 
 /*global eve, document, window, ActiveXObject, createPopup, setTimeout, navigator */
-/*global Raphael */
+/*global Raphael, Vector2 */
 
 (function () {
     /*\
@@ -2787,6 +2787,13 @@
                 return "m" + [this.get(0), this.get(1), this.get(2), this.get(3), this.get(4), this.get(5)];
             }
         };
+        //MB20120227 BEGIN CHANGES  
+        //simple patch to support vector2 type
+        //should create a live patch for this.
+        matrixproto.transform = function(x) {
+           return new Vector2( x.x * this.a + x.y * this.c + this.e , x.x * this.b + x.y * this.d + this.f );
+        };
+        //MB20120227 END CHANGES
     })(Matrix.prototype);
 
     // WebKit rendering bug workaround method
@@ -2832,7 +2839,7 @@
                             y = e.clientY + scrollY;
                     if (supportsTouch && touchMap[has](type)) {
                         for (var i = 0, ii = e.targetTouches && e.targetTouches.length; i < ii; i++) {
-                            if (e.targetTouches[i].target === obj) {
+                            if (e.targetTouches[i].target == obj) {
                                 var olde = e;
                                 e = e.targetTouches[i];
                                 e.originalEvent = olde;
@@ -2886,7 +2893,7 @@
                     touch;
                 while (i--) {
                     touch = e.touches[i];
-                    if (touch.identifier === dragi.el._drag.id) {
+                    if (touch.identifier == dragi.el._drag.id) {
                         x = touch.clientX;
                         y = touch.clientY;
                         (e.originalEvent ? e.originalEvent : e).preventDefault();
